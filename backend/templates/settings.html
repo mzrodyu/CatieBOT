@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API 设置 - 喵喵答疑</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+  </head>
+  <body>
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="brand">喵喵答疑</div>
+      <nav class="nav-menu">
+        <div class="nav-section">主菜单</div>
+        <a href="/admin/bots" class="nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+          </svg>
+          BOT管理
+        </a>
+        <a href="/admin/knowledge" class="nav-item">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+            />
+          </svg>
+          知识库
+        </a>
+        <a href="/admin/settings" class="nav-item active">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          API 设置
+        </a>
+        <a href="/admin/memories" class="nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+          </svg>
+          用户记忆
+        </a>
+        <a href="/admin/stats" class="nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          </svg>
+          统计
+        </a>
+      </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <div class="main-wrapper">
+      <header class="header">
+        <h1 class="page-title">API 设置</h1>
+        <!-- BOT 选择器 -->
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+          <span style="color: var(--text-muted);">BOT:</span>
+          <select id="botSelector" onchange="location.href='/admin/settings?bot_id='+this.value" style="padding: 6px 12px; border-radius: 6px; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main);">
+            {% for bot in bots %}
+            <option value="{{ bot.id }}" {% if bot.id == current_bot %}selected{% endif %}>{{ bot.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <div class="content-inner">
+          <div class="grid-2">
+            <!-- 左侧：API 配置表单 -->
+            <section class="card">
+              <h2 class="card-title">🔑 大模型 API 配置</h2>
+              <p class="card-desc">
+                配置 Gemini 或其他 OpenAI 兼容的大模型接口。
+              </p>
+
+              {% if message %}
+              <div
+                class="alert {% if message_type == 'success' %}alert-success{% else %}alert-error{% endif %}"
+              >
+                {{ message }}
+              </div>
+              {% endif %}
+
+              <form method="post" action="/admin/settings">
+                <input type="hidden" name="bot_id" value="{{ current_bot }}" />
+                <div class="form-group">
+                  <label class="form-label">API Base URL</label>
+                  <input
+                    type="text"
+                    name="llm_base_url"
+                    class="input"
+                    value="{{ config.llm_base_url }}"
+                    placeholder="https://generativelanguage.googleapis.com/v1beta/openai"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">API Key</label>
+                  <input
+                    type="password"
+                    name="llm_api_key"
+                    class="input"
+                    value="{{ config.llm_api_key }}"
+                    placeholder="你的 API Key"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">模型名称</label>
+                  <div style="display: flex; gap: 10px;">
+                    <select name="llm_model" id="modelSelect" class="input" style="flex: 1;">
+                      <option value="{{ config.llm_model }}">{{ config.llm_model or '请选择模型' }}</option>
+                    </select>
+                    <button type="button" class="btn btn-primary" onclick="fetchModels()" id="fetchBtn">
+                      拉取模型
+                    </button>
+                  </div>
+                  <small style="color: var(--text-muted); font-size: 12px; margin-top: 5px; display: block;">
+                    点击"拉取模型"从 API 获取可用模型列表
+                  </small>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">机器人人设</label>
+                  <small style="color: var(--text-muted); font-size: 12px; display: block; margin-bottom: 8px;">
+                    定义机器人的性格、说话风格、专业知识等。这会影响所有回复。
+                  </small>
+                  <textarea
+                    name="bot_persona"
+                    class="textarea"
+                    placeholder="示例：&#10;你是小鱼娘，一个活泼可爱的猫娘。&#10;&#10;【性格】&#10;- 活泼话多、容易害羞&#10;- 喜欢撒娇、有点小傲娇&#10;&#10;【说话风格】&#10;- 短句为主，口语化&#10;- 可以用 *动作* 表达，如 *戳戳你*&#10;- 偶尔喵一下"
+                    style="min-height: 250px; font-family: monospace; line-height: 1.6;"
+                  >{{ config.bot_persona }}</textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">上下文消息数量</label>
+                  <input
+                    type="number"
+                    name="context_limit"
+                    class="input"
+                    value="{{ config.context_limit }}"
+                    min="0"
+                    max="200"
+                    placeholder="100"
+                  />
+                  <small style="color: var(--text-muted); font-size: 12px"
+                    >机器人读取频道最近多少条消息作为上下文（0=不读取，建议10-20）</small
+                  >
+                </div>
+                <div class="form-group">
+                  <label class="form-label">流式输出</label>
+                  <select name="use_stream" class="input">
+                    <option value="1" {% if config.use_stream %}selected{% endif %}>开启（推荐）</option>
+                    <option value="0" {% if not config.use_stream %}selected{% endif %}>关闭</option>
+                  </select>
+                  <small style="color: var(--text-muted); font-size: 12px"
+                    >流式输出可避免长时间等待超时，建议开启</small
+                  >
+                </div>
+                <div class="form-group">
+                  <label class="form-label">管理员密码</label>
+                  <input
+                    type="password"
+                    name="admin_password"
+                    class="input"
+                    value="{{ config.admin_password }}"
+                    placeholder="留空则不修改"
+                  />
+                  <small style="color: var(--text-muted); font-size: 12px"
+                    >修改后需要重新登录</small
+                  >
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                  保存配置
+                </button>
+              </form>
+            </section>
+
+            <!-- 右侧：状态信息 -->
+            <section class="card">
+              <h2 class="card-title">统计数据</h2>
+
+              <div class="setting-row">
+                <span class="setting-label">今日提问</span>
+                <span
+                  class="setting-value"
+                  style="font-size: 1.2em; font-weight: bold; color: #3b82f6"
+                  >{{ today_asks }} 次</span
+                >
+              </div>
+
+              <div class="setting-row">
+                <span class="setting-label">本周提问</span>
+                <span
+                  class="setting-value"
+                  style="font-size: 1.2em; font-weight: bold; color: #10b981"
+                  >{{ week_asks }} 次</span
+                >
+              </div>
+
+              <div class="setting-row">
+                <span class="setting-label">累计提问</span>
+                <span
+                  class="setting-value"
+                  style="font-size: 1.2em; font-weight: bold; color: #8b5cf6"
+                  >{{ total_asks }} 次</span
+                >
+              </div>
+
+              <div class="setting-row">
+                <span class="setting-label">知识库条目</span>
+                <span class="setting-value">{{ kb_count }} 条</span>
+              </div>
+
+              <hr
+                style="
+                  border: none;
+                  border-top: 1px solid var(--border-color);
+                  margin: 16px 0;
+                "
+              />
+
+              <h3
+                style="
+                  font-size: 14px;
+                  color: var(--text-main);
+                  margin-bottom: 12px;
+                "
+              >
+                🔧 系统配置
+              </h3>
+
+              <div class="setting-row">
+                <span class="setting-label">API 连接</span>
+                <span class="setting-value">
+                  {% if config.llm_api_key %}
+                  <span class="status-dot ok"></span> 已配置 {% else %}
+                  <span class="status-dot error"></span> 未配置 {% endif %}
+                </span>
+              </div>
+
+              <div class="setting-row">
+                <span class="setting-label">当前模型</span>
+                <span class="setting-value"
+                  >{{ config.llm_model or '未设置' }}</span
+                >
+              </div>
+
+              <div class="setting-row">
+                <span class="setting-label">上下文数量</span>
+                <span class="setting-value">{{ config.context_limit }} 条</span>
+              </div>
+
+              <div
+                style="
+                  margin-top: 20px;
+                  padding: 14px;
+                  background: rgba(59, 130, 246, 0.1);
+                  border-radius: 8px;
+                  font-size: 13px;
+                  color: var(--text-muted);
+                "
+              >
+                <strong style="color: var(--text-main)">提示</strong><br />
+                Gemini 的 OpenAI 兼容端点：<br />
+                <code
+                  style="
+                    background: #1e293b;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                  "
+                  >https://generativelanguage.googleapis.com/v1beta/openai</code
+                >
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function fetchModels() {
+        const btn = document.getElementById('fetchBtn');
+        const select = document.getElementById('modelSelect');
+        const baseUrl = document.querySelector('input[name="llm_base_url"]').value.trim();
+        const apiKey = document.querySelector('input[name="llm_api_key"]').value.trim();
+        
+        if (!baseUrl || !apiKey) {
+          alert('请先填写 API Base URL 和 API Key');
+          return;
+        }
+        
+        btn.textContent = '拉取中...';
+        btn.disabled = true;
+        
+        try {
+          const resp = await fetch('/api/fetch_models', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({base_url: baseUrl, api_key: apiKey})
+          });
+          const data = await resp.json();
+          
+          if (data.models && data.models.length > 0) {
+            const currentModel = select.value;
+            select.innerHTML = '';
+            data.models.forEach(model => {
+              const opt = document.createElement('option');
+              opt.value = model;
+              opt.textContent = model;
+              if (model === currentModel) opt.selected = true;
+              select.appendChild(opt);
+            });
+            btn.textContent = '已拉取 ' + data.models.length + ' 个';
+          } else {
+            alert(data.error || '未找到可用模型');
+            btn.textContent = '拉取模型';
+          }
+        } catch (e) {
+          alert('拉取失败: ' + e.message);
+          btn.textContent = '拉取模型';
+        }
+        
+        btn.disabled = false;
+      }
+    </script>
+  </body>
+</html>

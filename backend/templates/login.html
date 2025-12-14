@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理员登录 - 喵喵答疑</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: var(--bg-body);
+        margin: 0;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 360px;
+        background: var(--bg-card);
+        padding: 2.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
+      }
+      .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .login-icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+      }
+      .login-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--text-main);
+        margin: 0;
+      }
+      .copyright {
+        text-align: center;
+        margin-top: 2rem;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-icon">◉</div>
+        <h1 class="login-title">喵喵后台登录</h1>
+      </div>
+
+      {% if error %}
+      <div class="alert alert-error" style="margin-bottom: 1.5rem">
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="post" action="/login">
+        <div class="form-group">
+          <label class="form-label">管理员密码</label>
+          <input
+            type="password"
+            name="password"
+            class="input"
+            placeholder="请输入密码"
+            required
+            autofocus
+          />
+        </div>
+        <button
+          type="submit"
+          class="btn btn-primary btn-block"
+          style="height: 44px; font-size: 15px; margin-top: 1rem"
+        >
+          登 录
+        </button>
+      </form>
+
+      <div class="copyright">&copy; Meow QA Bot</div>
+    </div>
+  </body>
+</html>

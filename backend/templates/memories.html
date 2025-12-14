@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>用户记忆 - 小鱼娘后台</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+    <style>
+      /* 强制所有容器限制宽度 */
+      html,
+      body {
+        overflow-x: hidden !important;
+      }
+      .main-wrapper {
+        overflow-x: hidden !important;
+        max-width: calc(100vw - 220px) !important;
+        width: calc(100vw - 220px) !important;
+      }
+      .content {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        width: 100% !important;
+      }
+      #memoriesList {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        width: 100% !important;
+      }
+      .memory-card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        max-width: 100% !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+        contain: content;
+      }
+      .memory-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      .memory-card * {
+        max-width: 100% !important;
+        overflow-wrap: anywhere !important;
+      }
+      .memory-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        max-width: 100%;
+      }
+      .memory-user {
+        font-weight: bold;
+        color: var(--accent);
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .memory-user-id {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: normal;
+        background: var(--bg-main);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .memory-char-count {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-left: 8px;
+      }
+      .memory-time {
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+      .memory-content {
+        background: var(--bg-main);
+        padding: 15px;
+        border-radius: 8px;
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+        font-size: 13px;
+        line-height: 1.5;
+        max-height: 250px;
+        max-width: calc(100% - 30px) !important;
+        width: calc(100% - 30px) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+        display: block !important;
+      }
+      .memory-actions {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+      }
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .btn-edit {
+        background: var(--accent);
+        color: #000;
+      }
+      .btn-delete {
+        background: #f44336;
+        color: #fff;
+      }
+      .btn-clear {
+        background: #ff9800;
+        color: #fff;
+      }
+      .btn:hover {
+        opacity: 0.8;
+        transform: translateY(-1px);
+      }
+      .btn:active {
+        transform: translateY(0);
+      }
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-muted);
+      }
+      .loading::after {
+        content: "";
+        animation: dots 1.5s infinite;
+      }
+      @keyframes dots {
+        0%,
+        20% {
+          content: ".";
+        }
+        40% {
+          content: "..";
+        }
+        60%,
+        100% {
+          content: "...";
+        }
+      }
+      .search-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .search-bar input {
+        flex: 1;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-main);
+      }
+      .search-bar button {
+        padding: 10px 20px;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+      }
+      .modal.active {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-content {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 30px;
+        width: 90%;
+        max-width: 600px;
+      }
+      .modal-content h3 {
+        margin-bottom: 20px;
+        color: var(--accent);
+      }
+      .modal-content textarea {
+        width: 100%;
+        height: 200px;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-main);
+        color: var(--text-main);
+        resize: vertical;
+      }
+      .modal-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 32px;
+        font-weight: bold;
+        color: var(--accent);
+      }
+      .stat-label {
+        color: var(--text-muted);
+        margin-top: 5px;
+      }
+      .empty {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-muted);
+      }
+      /* 修复底部内容被遮挡 */
+      #memoriesList {
+        padding-bottom: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">喵喵答疑</div>
+      <nav class="nav-menu">
+        <div class="nav-section">主菜单</div>
+        <a href="/admin/bots" class="nav-item">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"
+            />
+          </svg>
+          BOT管理
+        </a>
+        <a href="/admin/knowledge" class="nav-item">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+            />
+          </svg>
+          知识库
+        </a>
+        <a href="/admin/settings" class="nav-item">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          API 设置
+        </a>
+        <a href="/admin/memories" class="nav-item active">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+            />
+          </svg>
+          用户记忆
+        </a>
+        <a href="/admin/stats" class="nav-item">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"
+            />
+          </svg>
+          统计
+        </a>
+      </nav>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="header">
+        <h1 class="page-title">用户记忆管理</h1>
+        <div
+          style="
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          "
+        >
+          <span style="color: var(--text-muted)">BOT:</span>
+          <select
+            id="botSelector"
+            onchange="loadMemories()"
+            style="
+              padding: 6px 12px;
+              border-radius: 6px;
+              background: var(--bg-card);
+              border: 1px solid var(--border-color);
+              color: var(--text-main);
+            "
+          >
+            {% for bot in bots %}
+            <option value="{{ bot.id }}">{{ bot.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value" id="totalMemories">0</div>
+            <div class="stat-label">总记忆数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="totalUsers">0</div>
+            <div class="stat-label">用户数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="avgLength">0</div>
+            <div class="stat-label">平均字数</div>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="搜索用户ID或记忆内容..."
+            onkeypress="if(event.key==='Enter')loadMemories()"
+          />
+          <button class="btn btn-edit" onclick="loadMemories()">🔍 搜索</button>
+          <button
+            class="btn"
+            style="background: #4caf50; color: #fff"
+            onclick="openAddModal()"
+          >
+            ➕ 添加
+          </button>
+          <button
+            class="btn btn-clear"
+            onclick="clearAllMemories()"
+            title="清空当前BOT的所有记忆"
+          >
+            🗑️ 清空
+          </button>
+        </div>
+
+        <div id="memoriesList"></div>
+      </main>
+    </div>
+
+    <!-- 编辑弹窗 -->
+    <div class="modal" id="editModal">
+      <div class="modal-content">
+        <h3>✏️ 编辑记忆</h3>
+        <p style="margin-bottom: 10px; color: var(--text-muted)">
+          用户: <span id="editUserId"></span>
+        </p>
+        <textarea id="editMemory"></textarea>
+        <div class="modal-actions">
+          <button
+            class="btn"
+            style="background: var(--border-color)"
+            onclick="closeModal()"
+          >
+            取消
+          </button>
+          <button class="btn btn-edit" onclick="saveMemory()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 添加记忆弹窗 -->
+    <div class="modal" id="addModal">
+      <div class="modal-content">
+        <h3>➕ 添加新记忆</h3>
+        <div style="margin-bottom: 15px">
+          <label
+            style="display: block; margin-bottom: 5px; color: var(--text-muted)"
+            >用户ID:</label
+          >
+          <input
+            type="text"
+            id="addUserId"
+            style="
+              width: 100%;
+              padding: 10px;
+              border-radius: 6px;
+              border: 1px solid var(--border-color);
+              background: var(--bg-main);
+              color: var(--text-main);
+            "
+            placeholder="输入Discord用户ID"
+          />
+        </div>
+        <div style="margin-bottom: 15px">
+          <label
+            style="display: block; margin-bottom: 5px; color: var(--text-muted)"
+            >用户名 (可选):</label
+          >
+          <input
+            type="text"
+            id="addUserName"
+            style="
+              width: 100%;
+              padding: 10px;
+              border-radius: 6px;
+              border: 1px solid var(--border-color);
+              background: var(--bg-main);
+              color: var(--text-main);
+            "
+            placeholder="输入用户昵称"
+          />
+        </div>
+        <div>
+          <label
+            style="display: block; margin-bottom: 5px; color: var(--text-muted)"
+            >记忆内容:</label
+          >
+          <textarea id="addMemory" placeholder="输入要记住的内容..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button
+            class="btn"
+            style="background: var(--border-color)"
+            onclick="closeAddModal()"
+          >
+            取消
+          </button>
+          <button
+            class="btn"
+            style="background: #4caf50; color: #fff"
+            onclick="addMemory()"
+          >
+            添加
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentEditId = null;
+
+      async function loadMemories() {
+        const botId = document.getElementById("botSelector").value;
+        const search = document.getElementById("searchInput").value;
+
+        const resp = await fetch(
+          `/api/memories/${botId}?q=${encodeURIComponent(search)}`
+        );
+        const data = await resp.json();
+
+        document.getElementById("totalMemories").textContent = data.total;
+        document.getElementById("totalUsers").textContent = data.total;
+        document.getElementById("avgLength").textContent = data.avg_length || 0;
+
+        const list = document.getElementById("memoriesList");
+        if (data.memories.length === 0) {
+          list.innerHTML = '<div class="empty">暂无用户记忆</div>';
+          return;
+        }
+
+        list.innerHTML = data.memories
+          .map(
+            (m) => `
+                <div class="memory-card">
+                    <div class="memory-header">
+                        <span class="memory-user">
+                          👤 ${escapeHtml(m.user_name || "未知用户")}
+                          <span class="memory-user-id">${m.user_id}</span>
+                        </span>
+                        <span class="memory-time">更新于 ${
+                          m.updated_at
+                        }<span class="memory-char-count">${
+              m.memory.length
+            }字</span></span>
+                    </div>
+                    <div class="memory-content">${escapeHtml(m.memory)}</div>
+                    <div class="memory-actions">
+                        <button class="btn btn-edit" onclick="editMemory('${
+                          m.user_id
+                        }', '${escapeJs(m.memory)}', '${escapeJs(
+              m.user_name || ""
+            )}')">✏️ 编辑</button>
+                        <button class="btn btn-delete" onclick="deleteMemory('${
+                          m.user_id
+                        }')">🗑️ 删除</button>
+                    </div>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function escapeJs(text) {
+        return text
+          .replace(/\\/g, "\\\\")
+          .replace(/'/g, "\\'")
+          .replace(/\n/g, "\\n");
+      }
+
+      function editMemory(userId, memory, userName) {
+        currentEditId = userId;
+        document.getElementById("editUserId").textContent = userName
+          ? userName + " (" + userId + ")"
+          : userId;
+        document.getElementById("editMemory").value = memory.replace(
+          /\\n/g,
+          "\n"
+        );
+        document.getElementById("editModal").classList.add("active");
+      }
+
+      async function clearAllMemories() {
+        const botId = document.getElementById("botSelector").value;
+        if (!confirm(`确定要清空 ${botId} 的所有用户记忆吗？此操作不可恢复！`))
+          return;
+        if (!confirm("再次确认：真的要删除所有记忆吗？")) return;
+
+        try {
+          const resp = await fetch(`/api/memories/${botId}/clear_all`, {
+            method: "DELETE",
+          });
+          if (resp.ok) {
+            alert("已清空所有记忆");
+            loadMemories();
+          } else {
+            alert("清空失败");
+          }
+        } catch (e) {
+          alert("网络错误: " + e.message);
+        }
+      }
+
+      function closeModal() {
+        document.getElementById("editModal").classList.remove("active");
+        currentEditId = null;
+      }
+
+      async function saveMemory() {
+        if (!currentEditId) return;
+
+        const botId = document.getElementById("botSelector").value;
+        const memory = document.getElementById("editMemory").value;
+
+        const resp = await fetch(`/api/memories/${botId}/${currentEditId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ memory }),
+        });
+
+        if (resp.ok) {
+          closeModal();
+          loadMemories();
+        } else {
+          alert("保存失败");
+        }
+      }
+
+      async function deleteMemory(userId) {
+        if (!confirm("确定删除这条记忆？")) return;
+
+        const botId = document.getElementById("botSelector").value;
+        await fetch(`/api/memories/${botId}/${userId}`, { method: "DELETE" });
+        loadMemories();
+      }
+
+      function openAddModal() {
+        document.getElementById("addUserId").value = "";
+        document.getElementById("addUserName").value = "";
+        document.getElementById("addMemory").value = "";
+        document.getElementById("addModal").classList.add("active");
+      }
+
+      function closeAddModal() {
+        document.getElementById("addModal").classList.remove("active");
+      }
+
+      async function addMemory() {
+        const botId = document.getElementById("botSelector").value;
+        const userId = document.getElementById("addUserId").value.trim();
+        const userName = document.getElementById("addUserName").value.trim();
+        const memory = document.getElementById("addMemory").value.trim();
+
+        if (!userId || !memory) {
+          alert("请填写用户ID和记忆内容");
+          return;
+        }
+
+        try {
+          const resp = await fetch(`/api/memories/${botId}/${userId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_name: userName || userId, memory }),
+          });
+
+          if (resp.ok) {
+            closeAddModal();
+            loadMemories();
+          } else {
+            const errData = await resp.json().catch(() => ({}));
+            alert("添加失败: " + (errData.detail || resp.statusText));
+          }
+        } catch (e) {
+          alert("网络错误: " + e.message);
+        }
+      }
+
+      // 初始化
+      loadMemories();
+    </script>
+  </body>
+</html>

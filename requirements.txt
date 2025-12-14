@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+jinja2
+httpx
+discord.py
+python-multipart
+Pillow
+jieba
+numpy
