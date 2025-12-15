@@ -373,11 +373,23 @@ class MeowClient(discord.Client):
         if not question:
             question = "你好"
 
-        # 检查是否有图片附件
+        # 检查是否有图片附件（包括被回复消息中的图片）
         image_urls = []
+        # 当前消息的图片
         for att in message.attachments:
             if att.content_type and att.content_type.startswith("image/"):
                 image_urls.append(att.url)
+        # 被回复消息的图片
+        if message.reference:
+            try:
+                replied_msg = message.reference.resolved
+                if not replied_msg:
+                    replied_msg = await message.channel.fetch_message(message.reference.message_id)
+                for att in replied_msg.attachments:
+                    if att.content_type and att.content_type.startswith("image/"):
+                        image_urls.append(att.url)
+            except:
+                pass
 
         # 获取服务器表情包列表
         emojis_info = ""
