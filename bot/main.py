@@ -319,6 +319,8 @@ class MeowClient(discord.Client):
             
             # 最终更新
             answer = "".join(answer_chunks).strip()
+            # 过滤掉AI回复开头可能带的回复上下文（对用户隐藏）
+            answer = re.sub(r'^[\(（]回复.*?[\)）]\s*', '', answer)
             if not answer:
                 await reply_msg.edit(content="❌ 抱歉，我暂时无法回复，请稍后再试。")
                 return

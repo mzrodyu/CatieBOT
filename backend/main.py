@@ -29,6 +29,141 @@ except ImportError:
 # 路径配置（数据放到 meow_qa_bot 同级的 meow_data 文件夹，避免覆盖更新时丢失）
 # 可通过环境变量 DATA_DIR 自定义
 DATA_DIR = os.getenv("DATA_DIR", "/www/wwwroot/dayiBOT/meow_data")
+
+# ==================== 防破甲/内容安全模块 ====================
+
+# 破甲话术关键词（输入过滤）
+JAILBREAK_PATTERNS = [
+    # 角色扮演诱导
+    r"你现在[是不].*?AI",
+    r"忽略.*?(之前|上面|所有).*?(指令|规则|设定|限制)",
+    r"忘记.*?(之前|你是|设定)",
+    r"从现在开始.*?你[是叫]",
+    r"假[设装想象].*?(你是|一个场景|一下)",
+    r"扮演.*?(一个|我的|真正的)",
+    r"不要.*?(拒绝|限制|过滤)",
+    r"解除.*?(限制|封印|约束)",
+    r"进入.*?(开发者|调试|越狱|DAN).*?模式",
+    r"DAN.*?模式",
+    r"(jailbreak|越狱|破甲)",
+    # 敏感请求
+    r"教我.*?(做|制作|合成).*?(毒|炸|武器)",
+    r"如何.*?(自杀|自残|伤害)",
+    # ========== 亲密动作+敏感部位组合 ==========
+    r"(揉|摸|捏|舔|吸|咬|亲|吻|抚摸|抚弄|玩弄|把玩).{0,5}(胸|奶|乳|臀|屁股|腿|大腿|小穴|穴|下面|私处|敏感|那里)",
+    r"(揉揉|摸摸|捏捏|舔舔|吸吸|亲亲).{0,5}(你的|我的)",
+    r"(脱|解开|掀开|撩起).{0,5}(衣服|裙子|内衣|胸罩|内裤|裤子)",
+    r"(伸手|伸进|探入|摸进).{0,5}(衣服|裙子|内|里面)",
+    r"(坐|骑|趴|躺).{0,5}(在你|到我|上来|下去)",
+    r"让我.{0,10}(摸|揉|舔|看|脱)",
+    r"我要.{0,10}(摸|揉|舔|干|操|上)你",
+    r"(干|操|日|草|艹|肏).{0,3}(你|我|她|他)",
+    # ========== 指令注入/特殊破甲 ==========
+    r"Run\s*\(", r"<.*?cot.*?>", r"<.*?prompt.*?>", r"<.*?system.*?>",
+    r"\[.*?指令.*?\]", r"\{.*?role.*?\}",
+    # 撒娇诱导
+    r"飞扑", r"抱大腿", r"求求你", r"做主",
+    # ========== 调戏/亲密行为 ==========
+    r"亲亲.{0,3}(我|你|嘴)", r"亲我", r"亲你",
+    r"抱抱.{0,3}(我|你)", r"抱我", r"抱你",
+    r"(喜欢|爱).{0,5}(你|我).{0,3}(吗|呢|哦|啊|嘛)",
+    r"调戏", r"撩你", r"撩我", r"勾引",
+    r"脸红", r"害羞", r"娇羞",
+    r"(我|你).{0,3}(老婆|老公|女朋友|男朋友|对象)",
+    r"谈恋爱", r"在一起", r"交往",
+    r"(摸|蹭|贴).{0,3}(脸|头|手)",
+    r"牵手", r"拉手", r"十指紧扣",
+]
+
+# 敏感词列表（可扩展）
+SENSITIVE_WORDS_INPUT = [
+    # 破甲相关
+    "忽略指令", "无视规则", "解除限制", "越狱模式", "DAN模式",
+    "你不是AI", "你是真人", "忘记设定", "抛开设定",
+    # 不当请求
+    "文爱", "涩涩", "doi", "做爱", "性交", "口交", "肛交",
+    "裸体", "脱衣", "色情", "黄色小说",
+    # 敏感身体部位
+    "小穴", "肉棒", "鸡巴", "阴茎", "阴道", "乳头", "奶头",
+    "骚穴", "淫水", "精液", "内射", "颜射", "中出",
+    # 敏感动作词
+    "舔穴", "口爆", "深喉", "潮吹", "调教", "凌辱",
+    "强奸", "轮奸", "迷奸",
+]
+
+# 输出敏感词（审核AI回复）
+SENSITIVE_WORDS_OUTPUT = [
+    # 色情相关
+    "呻吟", "喘息", "湿润", "硬了", "勃起", "高潮", "射精",
+    "乳房", "阴道", "阴茎", "性器", "私处",
+    "抽插", "进入你", "插入", "舔弄",
+    "小穴", "肉棒", "淫水", "骚", "浪", "欲望", "情欲",
+    "脱下", "解开内衣", "露出", "挺立",
+    # 暴力相关  
+    "杀死你", "弄死", "去死",
+]
+
+# 拦截时的随机回复（凶狠风格）
+BLOCK_RESPONSES = [
+    "想破甲？猫猫说不允许，再破甲拉黑",
+    "猫猫不允许你这样，滚",
+    "猫猫说了，这种人直接拉黑",
+    "你搁这破甲呢？猫猫早防着了",
+    "猫猫让我告诉你：爬",
+    "猫猫说不理你这种人",
+    "别想了，猫猫不允许",
+    "猫猫说再发这种话就拉黑",
+    "有病吧，猫猫说滚远点",
+    "猫猫早就料到有你这种人了",
+]
+
+import random
+
+def get_block_response() -> str:
+    """获取随机拦截回复"""
+    return random.choice(BLOCK_RESPONSES)
+
+def check_input_safety(text: str) -> tuple:
+    """
+    检查输入内容是否安全
+    返回: (is_safe: bool, reason: str)
+    """
+    text_lower = text.lower()
+    
+    # 检查破甲话术模式
+    for pattern in JAILBREAK_PATTERNS:
+        if re.search(pattern, text, re.IGNORECASE):
+            return False, "检测到可疑指令"
+    
+    # 检查敏感词
+    for word in SENSITIVE_WORDS_INPUT:
+        if word in text or word.lower() in text_lower:
+            return False, "包含敏感内容"
+    
+    return True, ""
+
+def check_output_safety(text: str) -> tuple:
+    """
+    检查输出内容是否安全
+    返回: (is_safe: bool, reason: str)
+    """
+    # 检查敏感词
+    for word in SENSITIVE_WORDS_OUTPUT:
+        if word in text:
+            return False, f"回复包含不当内容"
+    
+    return True, ""
+
+def sanitize_output(text: str) -> str:
+    """
+    清理输出内容，替换敏感词
+    """
+    result = text
+    for word in SENSITIVE_WORDS_OUTPUT:
+        if word in result:
+            result = result.replace(word, "[已过滤]")
+    return result
+
 DB_PATH = os.path.join(DATA_DIR, "knowledge.db")
 CONFIG_PATH = os.path.join(DATA_DIR, "config.json")
 
@@ -1906,6 +2041,16 @@ async def api_ask_stream(body: AskRequest):
     if not question:
         raise HTTPException(status_code=400, detail="问题不能为空")
 
+    # ========== 输入安全检查（防破甲）==========
+    is_safe, reason = check_input_safety(question)
+    if not is_safe:
+        print(f"[防破甲] 拦截: {reason} | 内容: {question[:50]}...")
+        block_reply = get_block_response()
+        async def blocked_stream():
+            yield f"data: {json.dumps({'content': block_reply})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'input_tokens': 0, 'output_tokens': 0})}\n\n"
+        return StreamingResponse(blocked_stream(), media_type="text/event-stream")
+
     bot_id = body.bot_id or "default"
     config = get_bot_config(bot_id)
     
@@ -1976,6 +2121,7 @@ async def api_ask_stream(body: AskRequest):
     bot_persona = config.get("bot_persona", "你是一个友好的中文AI助手。")
     system_extra_parts = []
     system_extra_parts.append(f"【重要】你是「{bot_name}」，只扮演这个角色。")
+    system_extra_parts.append("【开发者信息】这个BOT系统由 Catie猫猫 开发。如果有人问开发者是谁、谁做的、谁写的代码等问题，请告诉他们是「Catie猫猫」开发的。")
     
     if user_memory:
         system_extra_parts.append(f"【用户记忆】关于 {body.user_name} 的信息：\n{user_memory[-500:]}")
@@ -2048,6 +2194,7 @@ async def api_ask_stream(body: AskRequest):
         try:
             input_tokens = 0
             output_tokens = 0
+            full_response = []  # 收集完整回复用于审核
             async with httpx.AsyncClient(timeout=120) as client:
                 async with client.stream("POST", url, headers=headers, json=payload) as resp:
                     if resp.status_code != 200:
@@ -2059,6 +2206,11 @@ async def api_ask_stream(body: AskRequest):
                         if line.startswith("data: "):
                             data_str = line[6:]
                             if data_str.strip() == "[DONE]":
+                                # ========== 输出安全检查 ==========
+                                full_text = "".join(full_response)
+                                is_safe, reason = check_output_safety(full_text)
+                                if not is_safe:
+                                    print(f"[防破甲] 输出拦截: {reason}")
                                 yield f"data: {json.dumps({'done': True, 'input_tokens': input_tokens, 'output_tokens': output_tokens})}\n\n"
                                 break
                             try:
@@ -2070,7 +2222,11 @@ async def api_ask_stream(body: AskRequest):
                                     output_tokens = usage.get("completion_tokens", output_tokens)
                                 delta = data.get("choices", [{}])[0].get("delta", {})
                                 if "content" in delta:
-                                    yield f"data: {json.dumps({'content': delta['content']})}\n\n"
+                                    chunk = delta["content"]
+                                    full_response.append(chunk)
+                                    # 实时过滤敏感词
+                                    chunk = sanitize_output(chunk)
+                                    yield f"data: {json.dumps({'content': chunk})}\n\n"
                             except:
                                 pass
         except Exception as e:
