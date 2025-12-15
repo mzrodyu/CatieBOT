@@ -2324,15 +2324,23 @@ async def api_ask_stream(body: AskRequest):
                                     # 检测并过滤回复前缀 (回复xxx「xxx」）
                                     if not prefix_checked:
                                         prefix_buffer += chunk
-                                        # 检查是否有完整的回复前缀
-                                        if len(prefix_buffer) > 100 or (')' in prefix_buffer or '）' in prefix_buffer):
-                                            # 过滤掉回复前缀
-                                            filtered = re.sub(r'^[\(（]回复[^）\)]+[）\)]', '', prefix_buffer)
-                                            if filtered != prefix_buffer:
-                                                print(f"[过滤回复前缀] {prefix_buffer[:50]}...")
-                                            prefix_buffer = filtered.lstrip()
-                                            if prefix_buffer:
-                                                yield f"data: {json.dumps({'content': sanitize_output(prefix_buffer)})}\n\n"
+                                        # 检查是否以回复前缀开头
+                                        if prefix_buffer.lstrip().startswith('(') or prefix_buffer.lstrip().startswith('（'):
+                                            # 可能有前缀，等待右括号
+                                            if ')' in prefix_buffer or '）' in prefix_buffer or len(prefix_buffer) > 150:
+                                                # 过滤掉回复前缀
+                                                filtered = re.sub(r'^[\(（]回复[^）\)]+[）\)]', '', prefix_buffer)
+                                                if filtered != prefix_buffer:
+                                                    print(f"[过滤回复前缀] {prefix_buffer[:50]}...")
+                                                prefix_buffer = filtered.lstrip()
+                                                if prefix_buffer:
+                                                    yield f"data: {json.dumps({'content': sanitize_output(prefix_buffer)})}\n\n"
+                                                prefix_buffer = ""
+                                                prefix_checked = True
+                                            # 否则继续等待，不发送
+                                        else:
+                                            # 不是以括号开头，没有前缀，直接发送
+                                            yield f"data: {json.dumps({'content': sanitize_output(prefix_buffer)})}\n\n"
                                             prefix_buffer = ""
                                             prefix_checked = True
                                     else:
