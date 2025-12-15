@@ -562,8 +562,8 @@ def init_db():
         """
     )
     
-    # 确保至少有一个默认BOT存在（开源版本用户可自行修改或删除）
-    cur.execute("INSERT OR IGNORE INTO bots (id, name) VALUES ('default', '默认BOT')")
+    # 注释掉自动创建默认BOT，避免用户删除后又自动出现
+    # cur.execute("INSERT OR IGNORE INTO bots (id, name) VALUES ('default', '默认BOT')")
     
     # 从 config.json 迁移配置到 bot_configs 表（如果表为空）
     cur.execute("SELECT COUNT(*) FROM bot_configs WHERE bot_id = 'default'")
