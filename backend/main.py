@@ -2240,21 +2240,15 @@ async def api_ask_stream(body: AskRequest):
     # 构建消息
     messages = [{"role": "system", "content": system_prompt}]
     
-    # 添加聊天历史
+    # 添加聊天历史（作为背景信息，不分assistant/user角色，避免模型"继续"之前的回复）
     if body.chat_history:
+        history_lines = []
         for line in body.chat_history[-10:]:
             if ": " in line:
-                author, content = line.split(": ", 1)
-                if author.startswith("你("):
-                    role = "assistant"
-                    msg_content = content
-                else:
-                    role = "user"
-                    msg_content = f"[{author}] {content}"
-                if messages and messages[-1]["role"] == role:
-                    messages[-1]["content"] += f"\n{msg_content}"
-                else:
-                    messages.append({"role": role, "content": msg_content})
+                history_lines.append(line)
+        if history_lines:
+            history_text = "【聊天记录（仅供参考，不要重复这些内容）】\n" + "\n".join(history_lines)
+            messages.append({"role": "user", "content": history_text})
     
     # 添加当前问题（支持图片）- 用明确标记区分
     if body.image_urls:
