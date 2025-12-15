@@ -2240,14 +2240,14 @@ async def api_ask_stream(body: AskRequest):
     # 构建消息
     messages = [{"role": "system", "content": system_prompt}]
     
-    # 添加聊天历史（作为背景信息，不分assistant/user角色，避免模型"继续"之前的回复）
+    # 添加聊天历史（作为背景信息，减少条数避免混淆）
     if body.chat_history:
         history_lines = []
-        for line in body.chat_history[-10:]:
+        for line in body.chat_history[-5:]:  # 只保留最近5条
             if ": " in line:
                 history_lines.append(line)
         if history_lines:
-            history_text = "【聊天记录（仅供参考，不要重复这些内容）】\n" + "\n".join(history_lines)
+            history_text = "【最近聊天（仅供参考，这些是其他人说的，不是当前说话的人）】\n" + "\n".join(history_lines)
             messages.append({"role": "user", "content": history_text})
     
     # 添加当前问题（支持图片）- 用明确标记区分
