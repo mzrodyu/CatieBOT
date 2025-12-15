@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>API 设置 - 喵喵答疑</title>
+    <title>BOT 设置 - 喵喵答疑</title>
     <link rel="stylesheet" href="/static/admin.css" />
   </head>
   <body>
@@ -53,7 +53,7 @@
               d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          API 设置
+          BOT 设置
         </a>
         <a href="/admin/memories?bot_id={{ current_bot }}" class="nav-item">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -73,7 +73,7 @@
     <!-- 主内容区 -->
     <div class="main-wrapper">
       <header class="header">
-        <h1 class="page-title">API 设置</h1>
+        <h1 class="page-title">BOT 设置</h1>
         <!-- BOT 选择器 -->
         <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
           <span style="color: var(--text-muted);">BOT:</span>
@@ -88,11 +88,11 @@
       <div class="content-area">
         <div class="content-inner">
           <div class="grid-2">
-            <!-- 左侧：API 配置表单 -->
+            <!-- 左侧：BOT 人设配置 -->
             <section class="card">
-              <h2 class="card-title">🔑 大模型 API 配置</h2>
+              <h2 class="card-title">🤖 BOT 人设</h2>
               <p class="card-desc">
-                配置 Gemini 或其他 OpenAI 兼容的大模型接口。
+                定义机器人的性格、说话风格、专业知识等。
               </p>
 
               {% if message %}
@@ -105,45 +105,13 @@
 
               <form method="post" action="/admin/settings">
                 <input type="hidden" name="bot_id" value="{{ current_bot }}" />
-                <div class="form-group">
-                  <label class="form-label">API Base URL</label>
-                  <input
-                    type="text"
-                    name="llm_base_url"
-                    class="input"
-                    value="{{ config.llm_base_url }}"
-                    placeholder="https://generativelanguage.googleapis.com/v1beta/openai"
-                  />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">API Key</label>
-                  <input
-                    type="password"
-                    name="llm_api_key"
-                    class="input"
-                    value="{{ config.llm_api_key }}"
-                    placeholder="你的 API Key"
-                  />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">模型名称</label>
-                  <div style="display: flex; gap: 10px;">
-                    <select name="llm_model" id="modelSelect" class="input" style="flex: 1;">
-                      <option value="{{ config.llm_model }}">{{ config.llm_model or '请选择模型' }}</option>
-                    </select>
-                    <button type="button" class="btn btn-primary" onclick="fetchModels()" id="fetchBtn">
-                      拉取模型
-                    </button>
-                  </div>
-                  <small style="color: var(--text-muted); font-size: 12px; margin-top: 5px; display: block;">
-                    点击"拉取模型"从 API 获取可用模型列表
-                  </small>
-                </div>
+                <!-- 隐藏字段保持API配置不变 -->
+                <input type="hidden" name="llm_base_url" value="{{ config.llm_base_url }}" />
+                <input type="hidden" name="llm_api_key" value="{{ config.llm_api_key }}" />
+                <input type="hidden" name="llm_model" value="{{ config.llm_model }}" />
+                
                 <div class="form-group">
                   <label class="form-label">机器人人设</label>
-                  <small style="color: var(--text-muted); font-size: 12px; display: block; margin-bottom: 8px;">
-                    定义机器人的性格、说话风格、专业知识等。这会影响所有回复。
-                  </small>
                   <textarea
                     name="bot_persona"
                     class="textarea"
@@ -196,12 +164,68 @@
                     placeholder="留空则不修改"
                   />
                   <small style="color: var(--text-muted); font-size: 12px"
-                    >修改后需要重新登录</small
+                    >修改后需要重新登录（全局设置）</small
                   >
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-block">
-                  保存配置
+                  保存 BOT 设置
+                </button>
+              </form>
+            </section>
+
+            <!-- 中间：API 配置 -->
+            <section class="card">
+              <h2 class="card-title">🔑 API 配置</h2>
+              <p class="card-desc">
+                配置 Gemini 或其他 OpenAI 兼容的大模型接口。
+              </p>
+
+              <form method="post" action="/admin/settings">
+                <input type="hidden" name="bot_id" value="{{ current_bot }}" />
+                <!-- 隐藏字段保持BOT配置不变 -->
+                <input type="hidden" name="bot_persona" value="{{ config.bot_persona }}" />
+                <input type="hidden" name="context_limit" value="{{ config.context_limit }}" />
+                <input type="hidden" name="use_stream" value="{{ config.use_stream }}" />
+                <input type="hidden" name="use_chat_history" value="{{ config.use_chat_history }}" />
+                
+                <div class="form-group">
+                  <label class="form-label">API Base URL</label>
+                  <input
+                    type="text"
+                    name="llm_base_url"
+                    class="input"
+                    value="{{ config.llm_base_url }}"
+                    placeholder="https://generativelanguage.googleapis.com/v1beta/openai"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">API Key</label>
+                  <input
+                    type="password"
+                    name="llm_api_key"
+                    class="input"
+                    value="{{ config.llm_api_key }}"
+                    placeholder="你的 API Key"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">模型名称</label>
+                  <div style="display: flex; gap: 10px;">
+                    <select name="llm_model" id="modelSelect" class="input" style="flex: 1;">
+                      <option value="{{ config.llm_model }}">{{ config.llm_model or '请选择模型' }}</option>
+                    </select>
+                    <button type="button" class="btn btn-primary" onclick="fetchModels()" id="fetchBtn">
+                      拉取模型
+                    </button>
+                  </div>
+                  <small style="color: var(--text-muted); font-size: 12px; margin-top: 5px; display: block;">
+                    点击"拉取模型"从 API 获取可用模型列表
+                  </small>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                  保存 API 配置
                 </button>
               </form>
             </section>
