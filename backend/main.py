@@ -556,12 +556,8 @@ def init_db():
         """
     )
     
-    # 确保默认BOT存在并修正名称
-    cur.execute("INSERT OR IGNORE INTO bots (id, name) VALUES ('default', 'Fishy')")
-    cur.execute("INSERT OR IGNORE INTO bots (id, name) VALUES ('maodie', '小鱼娘')")
-    # 修正已存在的BOT名称
-    cur.execute("UPDATE bots SET name = 'Fishy' WHERE id = 'default'")
-    cur.execute("UPDATE bots SET name = '小鱼娘' WHERE id = 'maodie'")
+    # 确保至少有一个默认BOT存在（开源版本用户可自行修改或删除）
+    cur.execute("INSERT OR IGNORE INTO bots (id, name) VALUES ('default', '默认BOT')")
     
     # 从 config.json 迁移配置到 bot_configs 表（如果表为空）
     cur.execute("SELECT COUNT(*) FROM bot_configs WHERE bot_id = 'default'")
@@ -1084,9 +1080,6 @@ async def create_bot(name: str = Form(...), bot_id: str = Form(...)):
 @app.delete("/api/bots/{bot_id}")
 async def delete_bot(bot_id: str):
     """删除BOT及其所有数据"""
-    if bot_id == "default":
-        raise HTTPException(status_code=400, detail="不能删除默认BOT")
-    
     conn = get_db()
     cur = conn.cursor()
     # 删除关联数据
