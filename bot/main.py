@@ -1,6 +1,7 @@
 import os
 import re
 import discord
+from discord import app_commands
 import httpx
 import json
 import asyncio
@@ -9,8 +10,22 @@ TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
 BACKEND_URL = os.getenv("BACKEND_URL", "http://74.48.84.234:8001")
 BOT_ID = os.getenv("BOT_ID", "default")  # Fishy
 
+# 管理员ID列表
+ADMIN_IDS = ["1373778569154658426"]  # Catie猫猫的ID
+
 # 用户消息计数器（用于定期总结）
 user_message_counts = {}
+
+async def check_blacklist(user_id: str) -> dict:
+    """检查用户是否被拉黑"""
+    try:
+        async with httpx.AsyncClient(timeout=5) as http:
+            resp = await http.get(f"{BACKEND_URL.rstrip('/')}/api/blacklist/check/{user_id}")
+            if resp.status_code == 200:
+                return resp.json()
+    except:
+        pass
+    return {"banned": False}
 
 async def append_user_context(user_id: str, user_name: str, user_msg: str, bot_reply: str):
     """追加对话上下文到记忆（用于后续总结）"""
@@ -96,6 +111,99 @@ intents.message_content = True
 class MeowClient(discord.Client):
     def __init__(self):
         super().__init__(intents=intents)
+        self.tree = app_commands.CommandTree(self)
+
+    async def setup_hook(self):
+        """注册斜杠命令"""
+        # 拉黑命令
+        @self.tree.command(name="ban", description="拉黑用户（仅管理员）")
+        @app_commands.describe(
+            user="要拉黑的用户",
+            hours="拉黑时长（小时），0为永久",
+            reason="拉黑原因"
+        )
+        async def ban_command(interaction: discord.Interaction, user: discord.User, hours: int = 0, reason: str = "违规行为"):
+            if str(interaction.user.id) not in ADMIN_IDS:
+                await interaction.response.send_message("❌ 你没有权限执行此操作", ephemeral=True)
+                return
+            
+            try:
+                async with httpx.AsyncClient(timeout=10) as http:
+                    resp = await http.post(
+                        f"{BACKEND_URL.rstrip('/')}/api/blacklist/ban",
+                        params={
+                            "user_id": str(user.id),
+                            "banned_by": str(interaction.user.id),
+                            "reason": reason,
+                            "duration_hours": hours
+                        }
+                    )
+                    if resp.status_code == 200:
+                        duration = f"{hours}小时" if hours > 0 else "永久"
+                        await interaction.response.send_message(f"✅ 已拉黑 {user.mention}，时长：{duration}，原因：{reason}")
+                    else:
+                        await interaction.response.send_message(f"❌ 拉黑失败：{resp.text}", ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message(f"❌ 操作失败：{e}", ephemeral=True)
+        
+        # 解除拉黑命令
+        @self.tree.command(name="unban", description="解除拉黑（仅管理员）")
+        @app_commands.describe(user="要解除拉黑的用户")
+        async def unban_command(interaction: discord.Interaction, user: discord.User):
+            if str(interaction.user.id) not in ADMIN_IDS:
+                await interaction.response.send_message("❌ 你没有权限执行此操作", ephemeral=True)
+                return
+            
+            try:
+                async with httpx.AsyncClient(timeout=10) as http:
+                    resp = await http.post(
+                        f"{BACKEND_URL.rstrip('/')}/api/blacklist/unban",
+                        params={
+                            "user_id": str(user.id),
+                            "unbanned_by": str(interaction.user.id)
+                        }
+                    )
+                    if resp.status_code == 200:
+                        await interaction.response.send_message(f"✅ 已解除 {user.mention} 的拉黑")
+                    else:
+                        await interaction.response.send_message(f"❌ 解除失败：{resp.text}", ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message(f"❌ 操作失败：{e}", ephemeral=True)
+        
+        # 查看黑名单命令
+        @self.tree.command(name="blacklist", description="查看黑名单（仅管理员）")
+        async def blacklist_command(interaction: discord.Interaction):
+            if str(interaction.user.id) not in ADMIN_IDS:
+                await interaction.response.send_message("❌ 你没有权限执行此操作", ephemeral=True)
+                return
+            
+            try:
+                async with httpx.AsyncClient(timeout=10) as http:
+                    resp = await http.get(f"{BACKEND_URL.rstrip('/')}/api/blacklist/list")
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        if not data:
+                            await interaction.response.send_message("📋 黑名单为空", ephemeral=True)
+                            return
+                        
+                        lines = ["📋 **黑名单列表**\n"]
+                        for item in data[:20]:  # 最多显示20条
+                            user_id = item["user_id"]
+                            reason = item.get("reason", "无")
+                            expires = item.get("expires_at", "永久")
+                            if expires and expires != "永久":
+                                expires = expires[:19]  # 截取日期部分
+                            lines.append(f"• <@{user_id}> - 原因：{reason} - 到期：{expires}")
+                        
+                        await interaction.response.send_message("\n".join(lines), ephemeral=True)
+                    else:
+                        await interaction.response.send_message(f"❌ 获取失败", ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message(f"❌ 操作失败：{e}", ephemeral=True)
+        
+        # 同步斜杠命令
+        await self.tree.sync()
+        print("斜杠命令已同步")
 
     async def on_ready(self):
         print(f"Logged in as {self.user} (ID: {self.user.id})")
@@ -117,6 +225,13 @@ class MeowClient(discord.Client):
                 pass
         
         if not is_mentioned and not is_reply_to_bot:
+            return
+        
+        # 检查用户是否被拉黑
+        blacklist_result = await check_blacklist(str(message.author.id))
+        if blacklist_result.get("banned"):
+            reason = blacklist_result.get("reason", "违规行为")
+            await message.reply(f"你已被拉黑，原因：{reason}")
             return
         
         # Bot对Bot：添加冷却防止无限循环（同频道5秒内不重复回复同一个Bot）

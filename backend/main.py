@@ -670,6 +670,21 @@ def init_db():
         """
     )
     
+    # 黑名单表
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS blacklist (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            reason TEXT DEFAULT '',
+            banned_by TEXT NOT NULL,
+            banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP,
+            UNIQUE(user_id)
+        )
+        """
+    )
+    
     # 初始化默认商品
     default_items = [
         ('gift_fish', 'default', '🐟 小鱼干', '猫娘最爱的零食！好感度+5', 50, 'gift', '{"favor": 5}'),
@@ -2623,6 +2638,97 @@ async def migrate_game_data(path: str = None):
         "message": f"迁移完成！货币: {migrated['currency']} 条，好感度: {migrated['affection']} 条",
         "migrated": migrated
     }
+
+
+# ==================== 黑名单管理 ====================
+
+# 管理员ID列表（可以使用拉黑功能的用户）
+ADMIN_IDS = ["1373778569154658426"]  # Catie猫猫的ID
+
+@app.post("/api/blacklist/ban")
+async def ban_user(user_id: str, banned_by: str, reason: str = "", duration_hours: int = 0):
+    """拉黑用户"""
+    if banned_by not in ADMIN_IDS:
+        raise HTTPException(status_code=403, detail="无权限执行此操作")
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    expires_at = None
+    if duration_hours > 0:
+        from datetime import datetime, timedelta
+        expires_at = (datetime.now() + timedelta(hours=duration_hours)).isoformat()
+    
+    cur.execute(
+        "INSERT OR REPLACE INTO blacklist (user_id, reason, banned_by, banned_at, expires_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)",
+        (user_id, reason, banned_by, expires_at)
+    )
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "user_id": user_id, "expires_at": expires_at}
+
+@app.post("/api/blacklist/unban")
+async def unban_user(user_id: str, unbanned_by: str):
+    """解除拉黑"""
+    if unbanned_by not in ADMIN_IDS:
+        raise HTTPException(status_code=403, detail="无权限执行此操作")
+    
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM blacklist WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "user_id": user_id}
+
+@app.get("/api/blacklist/check/{user_id}")
+async def check_blacklist(user_id: str):
+    """检查用户是否被拉黑"""
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT reason, banned_at, expires_at FROM blacklist WHERE user_id = ?", (user_id,))
+    row = cur.fetchone()
+    conn.close()
+    
+    if not row:
+        return {"banned": False}
+    
+    reason, banned_at, expires_at = row
+    
+    # 检查是否过期
+    if expires_at:
+        from datetime import datetime
+        try:
+            expire_time = datetime.fromisoformat(expires_at)
+            if datetime.now() > expire_time:
+                # 已过期，自动解除
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("DELETE FROM blacklist WHERE user_id = ?", (user_id,))
+                conn.commit()
+                conn.close()
+                return {"banned": False}
+        except:
+            pass
+    
+    return {"banned": True, "reason": reason, "banned_at": banned_at, "expires_at": expires_at}
+
+@app.get("/api/blacklist/list")
+async def list_blacklist():
+    """获取黑名单列表"""
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT user_id, reason, banned_by, banned_at, expires_at FROM blacklist ORDER BY banned_at DESC")
+    rows = cur.fetchall()
+    conn.close()
+    
+    return [{"user_id": r[0], "reason": r[1], "banned_by": r[2], "banned_at": r[3], "expires_at": r[4]} for r in rows]
+
+@app.get("/api/blacklist/admins")
+async def get_admins():
+    """获取管理员列表"""
+    return {"admins": ADMIN_IDS}
 
 
 if __name__ == "__main__":
