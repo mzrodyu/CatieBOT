@@ -1091,6 +1091,12 @@ async def create_bot(name: str = Form(...), bot_id: str = Form(...)):
     cur = conn.cursor()
     try:
         cur.execute("INSERT INTO bots (id, name) VALUES (?, ?)", (bot_id, name))
+        # 同时在 bot_configs 表中初始化配置记录
+        cur.execute(
+            """INSERT OR IGNORE INTO bot_configs (bot_id, llm_base_url, llm_api_key, llm_model, bot_persona, context_limit, use_stream)
+               VALUES (?, '', '', '', '', 100, 1)""",
+            (bot_id,)
+        )
         conn.commit()
     except sqlite3.IntegrityError:
         conn.close()
@@ -1174,14 +1180,18 @@ async def add_allowed_channel(bot_id: str, channel_id: str):
     row = cur.fetchone()
     
     if row:
-        current = row[0] or ""
-        channels = [c.strip() for c in current.split(",") if c.strip()]
+        channels = row[0].split(",") if row[0] else []
         if channel_id not in channels:
             channels.append(channel_id)
         new_value = ",".join(channels)
         cur.execute("UPDATE bot_configs SET allowed_channels = ? WHERE bot_id = ?", (new_value, bot_id))
     else:
-        cur.execute("INSERT INTO bot_configs (bot_id, allowed_channels) VALUES (?, ?)", (bot_id, channel_id))
+        # 插入完整的配置记录，而不是只有 allowed_channels
+        cur.execute(
+            """INSERT INTO bot_configs (bot_id, llm_base_url, llm_api_key, llm_model, bot_persona, context_limit, use_stream, allowed_channels)
+               VALUES (?, '', '', '', '', 100, 1, ?)""",
+            (bot_id, channel_id)
+        )
     
     conn.commit()
     conn.close()
