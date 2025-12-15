@@ -104,6 +104,29 @@ def get_context_limit():
         return max(10, min(500, int(limit)))
     return 100
 
+# 频道白名单缓存
+_allowed_channels_cache = {"channels": [], "last_fetch": 0}
+
+async def get_allowed_channels():
+    """获取允许发言的频道列表"""
+    import time
+    now = time.time()
+    # 缓存60秒
+    if _allowed_channels_cache["channels"] is not None and now - _allowed_channels_cache["last_fetch"] < 60:
+        return _allowed_channels_cache["channels"]
+    
+    try:
+        async with httpx.AsyncClient(timeout=5) as http:
+            resp = await http.get(f"{BACKEND_URL.rstrip('/')}/api/channels/{BOT_ID}")
+            if resp.status_code == 200:
+                data = resp.json()
+                _allowed_channels_cache["channels"] = data.get("channels", [])
+                _allowed_channels_cache["last_fetch"] = now
+                return _allowed_channels_cache["channels"]
+    except:
+        pass
+    return _allowed_channels_cache.get("channels") or []
+
 intents = discord.Intents.default()
 intents.message_content = True
 

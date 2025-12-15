@@ -728,8 +728,10 @@ def get_bot_config(bot_id: str) -> dict:
     if row:
         # 兼容旧数据库：检查use_stream列是否存在
         use_stream = 1
+        allowed_channels = ""
         try:
             use_stream = row["use_stream"] if "use_stream" in row.keys() else 1
+            allowed_channels = row["allowed_channels"] if "allowed_channels" in row.keys() else ""
         except:
             pass
         # 使用 if x is None 而不是 or，避免空字符串被替换为默认值
@@ -740,6 +742,7 @@ def get_bot_config(bot_id: str) -> dict:
             "bot_persona": row["bot_persona"] if row["bot_persona"] is not None else DEFAULT_CONFIG["bot_persona"],
             "context_limit": row["context_limit"] if row["context_limit"] is not None else 100,
             "use_stream": use_stream,
+            "allowed_channels": allowed_channels or "",
         }
     # 没有配置则用默认
     return DEFAULT_CONFIG.copy()
