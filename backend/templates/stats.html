@@ -211,15 +211,17 @@
 
         <div class="chart-container">
           <div class="chart-title">💬 最近提问记录</div>
-          <table>
-            <thead>
-              <tr>
-                <th>时间</th>
-                <th>问题</th>
-              </tr>
-            </thead>
-            <tbody id="recentQuestions"></tbody>
-          </table>
+          <div style="max-height: 400px; overflow-y: auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>问题</th>
+                </tr>
+              </thead>
+              <tbody id="recentQuestions"></tbody>
+            </table>
+          </div>
         </div>
       </main>
     </div>

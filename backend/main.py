@@ -516,6 +516,12 @@ def init_db():
     except:
         pass  # 列已存在则忽略
     
+    # 数据库迁移：添加allowed_channels列（频道白名单）
+    try:
+        cur.execute("ALTER TABLE bot_configs ADD COLUMN allowed_channels TEXT DEFAULT ''")
+    except:
+        pass  # 列已存在则忽略
+    
     # 知识库表（加bot_id）
     cur.execute(
         """
@@ -1138,6 +1144,69 @@ async def get_bot_config_api(bot_id: str):
     config["knowledge"] = knowledge_list
     
     return config
+
+
+# ============ 频道白名单 API ============
+
+@app.get("/api/channels/{bot_id}")
+async def get_allowed_channels(bot_id: str):
+    """获取允许的频道列表"""
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT allowed_channels FROM bot_configs WHERE bot_id = ?", (bot_id,))
+    row = cur.fetchone()
+    conn.close()
+    
+    if row and row[0]:
+        channels = [c.strip() for c in row[0].split(",") if c.strip()]
+        return {"channels": channels}
+    return {"channels": []}
+
+
+@app.post("/api/channels/{bot_id}/add")
+async def add_allowed_channel(bot_id: str, channel_id: str):
+    """添加允许的频道"""
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # 获取当前列表
+    cur.execute("SELECT allowed_channels FROM bot_configs WHERE bot_id = ?", (bot_id,))
+    row = cur.fetchone()
+    
+    if row:
+        current = row[0] or ""
+        channels = [c.strip() for c in current.split(",") if c.strip()]
+        if channel_id not in channels:
+            channels.append(channel_id)
+        new_value = ",".join(channels)
+        cur.execute("UPDATE bot_configs SET allowed_channels = ? WHERE bot_id = ?", (new_value, bot_id))
+    else:
+        cur.execute("INSERT INTO bot_configs (bot_id, allowed_channels) VALUES (?, ?)", (bot_id, channel_id))
+    
+    conn.commit()
+    conn.close()
+    return {"success": True}
+
+
+@app.post("/api/channels/{bot_id}/remove")
+async def remove_allowed_channel(bot_id: str, channel_id: str):
+    """移除允许的频道"""
+    conn = get_db()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT allowed_channels FROM bot_configs WHERE bot_id = ?", (bot_id,))
+    row = cur.fetchone()
+    
+    if row and row[0]:
+        channels = [c.strip() for c in row[0].split(",") if c.strip()]
+        if channel_id in channels:
+            channels.remove(channel_id)
+        new_value = ",".join(channels)
+        cur.execute("UPDATE bot_configs SET allowed_channels = ? WHERE bot_id = ?", (new_value, bot_id))
+        conn.commit()
+    
+    conn.close()
+    return {"success": True}
 
 
 @app.get("/api/knowledge/{bot_id}")

@@ -170,14 +170,12 @@
                       class="btn btn-small"
                       >知识库</a
                     >
-                    {% if bot.id != 'default' %}
                     <button
                       class="btn btn-small btn-danger"
                       onclick="deleteBot('{{ bot.id }}', '{{ bot.name }}')"
                     >
                       删除
                     </button>
-                    {% endif %}
                   </div>
                 </div>
                 {% endfor %}

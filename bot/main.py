@@ -140,7 +140,7 @@ class MeowClient(discord.Client):
                     )
                     if resp.status_code == 200:
                         duration = f"{hours}小时" if hours > 0 else "永久"
-                        await interaction.response.send_message(f"✅ 已拉黑 {user.mention}，时长：{duration}，原因：{reason}")
+                        await interaction.response.send_message(f"✅ 已拉黑 {user.mention}，时长：{duration}，原因：{reason}", ephemeral=True)
                     else:
                         await interaction.response.send_message(f"❌ 拉黑失败：{resp.text}", ephemeral=True)
             except Exception as e:
@@ -164,7 +164,7 @@ class MeowClient(discord.Client):
                         }
                     )
                     if resp.status_code == 200:
-                        await interaction.response.send_message(f"✅ 已解除 {user.mention} 的拉黑")
+                        await interaction.response.send_message(f"✅ 已解除 {user.mention} 的拉黑", ephemeral=True)
                     else:
                         await interaction.response.send_message(f"❌ 解除失败：{resp.text}", ephemeral=True)
             except Exception as e:
@@ -201,6 +201,73 @@ class MeowClient(discord.Client):
             except Exception as e:
                 await interaction.response.send_message(f"❌ 操作失败：{e}", ephemeral=True)
         
+        # 添加允许的频道/帖子
+        @self.tree.command(name="addchannel", description="添加允许发言的频道/帖子（仅管理员）")
+        @app_commands.describe(channel_id="频道或帖子ID")
+        async def addchannel_command(interaction: discord.Interaction, channel_id: str):
+            if str(interaction.user.id) not in ADMIN_IDS:
+                await interaction.response.send_message("❌ 你没有权限执行此操作", ephemeral=True)
+                return
+            
+            try:
+                async with httpx.AsyncClient(timeout=10) as http:
+                    resp = await http.post(
+                        f"{BACKEND_URL.rstrip('/')}/api/channels/{BOT_ID}/add",
+                        params={"channel_id": channel_id}
+                    )
+                    if resp.status_code == 200:
+                        await interaction.response.send_message(f"✅ 已添加频道 `{channel_id}` 到白名单", ephemeral=True)
+                    else:
+                        await interaction.response.send_message(f"❌ 添加失败：{resp.text}", ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message(f"❌ 操作失败：{e}", ephemeral=True)
+        
+        # 移除允许的频道/帖子
+        @self.tree.command(name="removechannel", description="移除允许发言的频道/帖子（仅管理员）")
+        @app_commands.describe(channel_id="频道或帖子ID")
+        async def removechannel_command(interaction: discord.Interaction, channel_id: str):
+            if str(interaction.user.id) not in ADMIN_IDS:
+                await interaction.response.send_message("❌ 你没有权限执行此操作", ephemeral=True)
+                return
+            
+            try:
+                async with httpx.AsyncClient(timeout=10) as http:
+                    resp = await http.post(
+                        f"{BACKEND_URL.rstrip('/')}/api/channels/{BOT_ID}/remove",
+                        params={"channel_id": channel_id}
+                    )
+                    if resp.status_code == 200:
+                        await interaction.response.send_message(f"✅ 已从白名单移除频道 `{channel_id}`", ephemeral=True)
+                    else:
+                        await interaction.response.send_message(f"❌ 移除失败：{resp.text}", ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message(f"❌ 操作失败：{e}", ephemeral=True)
+        
+        # 查看允许的频道列表
+        @self.tree.command(name="channels", description="查看允许发言的频道列表（仅管理员）")
+        async def channels_command(interaction: discord.Interaction):
+            if str(interaction.user.id) not in ADMIN_IDS:
+                await interaction.response.send_message("❌ 你没有权限执行此操作", ephemeral=True)
+                return
+            
+            try:
+                async with httpx.AsyncClient(timeout=10) as http:
+                    resp = await http.get(f"{BACKEND_URL.rstrip('/')}/api/channels/{BOT_ID}")
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        channels = data.get("channels", [])
+                        if not channels:
+                            await interaction.response.send_message("📋 频道白名单为空（允许所有频道）", ephemeral=True)
+                        else:
+                            lines = ["📋 **允许发言的频道/帖子**\n"]
+                            for ch in channels:
+                                lines.append(f"• `{ch}`")
+                            await interaction.response.send_message("\n".join(lines), ephemeral=True)
+                    else:
+                        await interaction.response.send_message(f"❌ 获取失败", ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message(f"❌ 操作失败：{e}", ephemeral=True)
+        
         # 同步斜杠命令
         await self.tree.sync()
         print("斜杠命令已同步")
@@ -226,6 +293,14 @@ class MeowClient(discord.Client):
         
         if not is_mentioned and not is_reply_to_bot:
             return
+        
+        # 检查频道白名单（如果设置了白名单，只在白名单频道响应）
+        config = await fetch_backend_config()
+        allowed_channels = config.get("allowed_channels", "")
+        if allowed_channels:
+            channel_list = [c.strip() for c in allowed_channels.split(",") if c.strip()]
+            if channel_list and str(message.channel.id) not in channel_list:
+                return  # 不在白名单中，不响应
         
         # 检查用户是否被拉黑（直接无视，不回复）
         blacklist_result = await check_blacklist(str(message.author.id))
